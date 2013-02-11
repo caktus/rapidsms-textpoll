@@ -1,16 +1,13 @@
+rapidsms-textpoll
+=================
 
+rapidsms-textpoll is a simple RapidSMS poll application.
 
-textpoll
-========================
+.. Documentation
+.. -----------------------------------
 
-Welcome to the documentation for rapidsms-textpoll!
-
-
-Documentation
------------------------------------
-
-Documentation on using rapidsms-textpoll is available on 
-`Read The Docs <http://readthedocs.org/docs/rapidsms-textpoll/>`_.
+.. Documentation on using rapidsms-textpoll is available on 
+.. `Read The Docs <http://readthedocs.org/docs/rapidsms-textpoll/>`_.
 
 
 Running the Tests
