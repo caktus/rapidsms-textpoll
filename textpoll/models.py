@@ -10,10 +10,18 @@ class Poll(models.Model):
     def __unicode__(self):
         return self.slug
 
+    def save(self, **kwargs):
+        if self.active:
+            Poll.objects.update(active=False)
+        return super(Poll, self).save(**kwargs)
+
 
 class Option(models.Model):
     poll = models.ForeignKey(Poll, related_name='options')
     text = models.CharField(max_length=32)
+
+    def __unicode__(self):
+        return self.text
 
 
 class Vote(models.Model):
@@ -25,3 +33,6 @@ class Vote(models.Model):
 
     class Meta(object):
         unique_together = ("poll", "connection")
+
+    def __unicode__(self):
+        return "%d: %s" % (self.connection_id, self.text)

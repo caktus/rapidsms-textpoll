@@ -1,6 +1,5 @@
 from rapidsms.tests.harness import RapidTest
 from textpoll import models as textpoll
-from textpoll.forms import VoteForm
 
 
 class VoteCreateDataMixin(object):
@@ -45,22 +44,42 @@ class VoteTest(VoteCreateDataMixin, RapidTest):
         return poll
 
     def test_polls_closed(self):
-        ""
+        "User should recieve a message if there are no active polls."
         connection = self.create_connection(data={'backend': self.backend})
         self.receive("poll vote test", connection)
         self.assertEqual(1, len(self.outbound))
         self.assertTrue("polls are closed" in self.outbound[0].text)
 
-    def test_invalid_vote(self):
-        self.create_sample_poll()
-        connection = self.create_connection(data={'backend': self.backend})
-        self.receive("poll vote invalid", connection)
-        self.assertTrue("is not a valid vote" in self.outbound[0].text)
-
     def test_vote(self):
+        "Make sure voting is recorded properly with correct answers."
         poll = self.create_sample_poll()
         connection = self.create_connection(data={'backend': self.backend})
         vote = poll.options.all()[0].text
         self.receive("poll vote %s" % vote, connection)
         self.assertEqual(poll.votes.all()[0].connection.pk, connection.pk)
         self.assertTrue("Thank you" in self.outbound[0].text)
+
+    def test_invalid_vote(self):
+        "Only proper votes will get stored."
+        poll = self.create_sample_poll()
+        connection = self.create_connection(data={'backend': self.backend})
+        self.receive("poll vote invalid", connection)
+        self.assertEqual(0, poll.votes.count())
+        self.assertTrue("is not a valid vote" in self.outbound[0].text)
+
+    def test_double_vote(self):
+        "Double votes shouldn't cause any errors."
+        poll = self.create_sample_poll()
+        connection = self.create_connection(data={'backend': self.backend})
+        vote = poll.options.all()[0].text
+        self.receive("poll vote %s" % vote, connection)
+        self.receive("poll vote %s" % vote, connection)
+        self.assertEqual(1, poll.votes.count())
+        self.assertTrue("already voted" in self.outbound[1].text)
+
+    def test_double_active_poll(self):
+        "There should only ever be one active poll."
+        self.create_sample_poll()
+        poll2 = self.create_sample_poll()
+        self.assertEqual(1, textpoll.Poll.objects.filter(active=True).count())
+        self.assertEqual(poll2.pk, textpoll.Poll.objects.get(active=True).pk)

@@ -1,9 +1,7 @@
 from __future__ import unicode_literals
 
 from django import forms
-from django.db.models import Q
 from django.forms.forms import NON_FIELD_ERRORS
-from django.forms.models import model_to_dict
 from django.forms.util import ErrorList
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext_lazy as _
@@ -15,7 +13,8 @@ class PlainErrorList(ErrorList):
     "Customization of the error list for including in an SMS message."
 
     def as_text(self):
-        if not self: return ''
+        if not self:
+            return ''
         return ''.join(['%s' % force_unicode(e) for e in self])
 
 
@@ -52,8 +51,8 @@ class VoteForm(HandlerForm):
 
     def __init__(self, *args, **kwargs):
         try:
-            self.poll = textpoll.Poll.objects.get(active=True)
-        except textpoll.Poll.DoesNotExist:
+            self.poll = textpoll.Poll.objects.filter(active=True)[0]
+        except IndexError:
             self.poll = None
         super(VoteForm, self).__init__(*args, **kwargs)
 
@@ -75,6 +74,8 @@ class VoteForm(HandlerForm):
     def clean(self):
         if not self.poll:
             raise forms.ValidationError(_("Sorry, the polls are closed."))
+        if self.poll.votes.filter(connection=self.connection).exists():
+            raise forms.ValidationError(_("You already voted."))
         return self.cleaned_data
 
     def save(self):
